@@ -1,4 +1,4 @@
-#include "TimeHistogram.h"
+#include "time_histogram.h"
 
 #include <chrono>
 
@@ -12,7 +12,7 @@ void TestCorrectness()
     xData[i] = float(i) / 16.0f;
     yData[i] = 4.0f * xData[i] * (1.0f - xData[i]);
   }
-  TimeHistogram hist(xData, yData, nData);
+  TimeHistogram::TimeHistogram hist(xData, yData, nData);
   float quantileData[3 * 1024];
   const float quantiles[] = { 0.0f, 0.5f, 1.0f };
   hist.ComputeQuantiles(quantileData, quantiles, 3);

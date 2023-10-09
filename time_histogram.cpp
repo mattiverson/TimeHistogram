@@ -1,6 +1,6 @@
-#include "TimeHistogram.h"
+#include "time_histogram.h"
 
-//float WendlandIntegralEvalScalar(float);
+namespace TimeHistogram {
 
 TimeHistogram::TimeHistogram(const float* x, const float* y, const U64 n)
   : nData{n}
@@ -53,4 +53,6 @@ void TimeHistogram::ComputeQuantiles(
 
     IntegrateToMass(out + i*nGrid, in);
   }
+}
+
 }

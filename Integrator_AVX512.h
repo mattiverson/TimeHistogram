@@ -7,6 +7,8 @@
 
 #include <immintrin.h>
 
+namespace Integrator {
+
 //
 // Evaluate the C4 Wendland kernel with the given bandwidth, at a vector of 16 points.
 //
@@ -230,6 +232,8 @@ static void IntegrateToMass(float* const __restrict out, const IntegrateToMassIn
     } while (iGrid < in.nGrid);
   }
   memcpy(out, in.lowerY, sizeof(float) * in.nGrid);
+}
+
 }
 
 #endif // INTEGRATOR_AVX512_H

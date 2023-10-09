@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cmath>
 
+namespace Integrator {
+
 using U32 = uint32_t;
 using U64 = uint64_t;
 
@@ -72,7 +74,7 @@ struct IntegrateToMassInputs
 
 #if defined __AVX512F__ && defined __AVX512DQ__ && !defined FORCE_GENERIC && !defined FORCE_AVX2 || defined FORCE_AVX512
 
-#include "Integrator_AVX512.h"
+#include "integrator_avx512.h"
 
 #elif defined(__AVX2__) && !defined FORCE_GENERIC || defined FORCE_AVX2
 #include <immintrin.h>
@@ -106,5 +108,7 @@ void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& i
 }
 
 #endif
+
+}
 
 #endif

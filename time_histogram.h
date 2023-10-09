@@ -1,7 +1,9 @@
 #pragma once
 #include <cstdint>
 
-#include "Integrator.h"
+#include "integrator.h"
+
+namespace TimeHistogram {
 
 using U32 = uint32_t;
 using U64 = uint64_t;
@@ -92,3 +94,5 @@ private:
   float yMin;
   float yMax;
 };
+
+}
