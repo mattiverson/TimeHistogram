@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+using U64 = uint64_t;
+
 void TestCorrectness()
 {
   constexpr U64 nData = 16;
@@ -16,7 +18,7 @@ void TestCorrectness()
   float quantileData[3 * 1024];
   const float quantiles[] = { 0.0f, 0.5f, 1.0f };
   hist.ComputeQuantiles(quantileData, quantiles, 3);
-  printf("%.6f, %.6f, %.6f, %.6f\n", WendlandIntegralEvalScalar(-1.0f), WendlandIntegralEvalScalar(-0.0f), WendlandIntegralEvalScalar(0.0f), WendlandIntegralEvalScalar(1.0f));
+  //printf("%.6f, %.6f, %.6f, %.6f\n", Integrator::WendlandIntegralEvalScalar(-1.0f), Integrator::WendlandIntegralEvalScalar(-0.0f), WendlandIntegralEvalScalar(0.0f), WendlandIntegralEvalScalar(1.0f));
 }
 
 void Profile()
@@ -41,7 +43,7 @@ void Profile()
   U64 dataNanos = dataDuration.count();
   printf("Data generated in %llu nanos\n", dataNanos);
 
-  TimeHistogram hist(xData, yData, nData);
+  TimeHistogram::TimeHistogram hist(xData, yData, nData);
   float quantileData[5 * 1024];
   const float quantiles[] = { 0.1f, 0.25f, 0.5f, 0.75f, 0.9f };
   auto computeStart = clock.now();
@@ -49,7 +51,7 @@ void Profile()
   auto computeStop = clock.now();
   auto computeDuration = computeStop - computeStart;
   U64 computeNanos = computeDuration.count();
-  U64 integralCount = 20ULL * 1024ULL * nData;
+  U64 integralCount = 100ULL * 1024ULL * nData;
   printf("%llu integrals in %llu nanos\n", integralCount, computeNanos);
   double integralRate = double(integralCount) / double(computeNanos);
   printf("Rate: %f G /s\n", integralRate);

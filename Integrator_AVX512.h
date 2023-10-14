@@ -1,11 +1,14 @@
-#if !defined INTEGRATOR_H
+#pragma once
+
+#if !defined ALLOW_INTEGRATOR_IMPL
 #error "Include Integrator.h instead of Integrator_AVX512.h"
 #endif
 
-#ifndef INTEGRATOR_AVX512_H
-#define INTEGRATOR_AVX512_H
-
 #include <immintrin.h>
+#include <thread>
+#include <atomic>
+
+#include "integrator_common.h"
 
 namespace Integrator {
 
@@ -159,7 +162,95 @@ static void LineIntegrals(float* const __restrict out, const LineIntegralsInputs
 //  for y <= y[i] in yGrid, of the sum of the kernel function of each data point.
 // PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
 //
+static void IntegrateToMassWorker(float* const __restrict out, const IntegrateToMassInputs& in, std::atomic<U64>& sharedGridIdx)
+{
+  U64 gridIdx = 0;
+  while ((gridIdx = sharedGridIdx.fetch_add(16, std::memory_order_relaxed)) < in.nGrid)
+  {
+    const float* const __restrict dataStart = in.xData;
+    const float* const __restrict yDataStart = in.yData;
+    const float* const __restrict dataEnd = dataStart + in.nData;
+    float* const __restrict dst = out + gridIdx;
+    const __m512 wendInt = _mm512_set1_ps(WEND_INT);
+    const __m512 xBandwidth = _mm512_set1_ps(in.xBandwidth);
+    const __m512 rXBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), xBandwidth);
+    const __m512 yBandwidth = _mm512_set1_ps(in.yBandwidth);
+    const __m512 rYBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), yBandwidth);
+    const __m512 oneHalf = _mm512_set1_ps(0.5f);
+    const __m512 targetMass = _mm512_loadu_ps(in.targetMass + gridIdx);
+    const __m512 gridX = _mm512_loadu_ps(in.xGrid + gridIdx);
+    __m512 gridYMin = _mm512_loadu_ps(in.lowerY + gridIdx);
+    __m512 gridYMax = _mm512_loadu_ps(in.upperY + gridIdx);
+    __m512 lowerMass = _mm512_loadu_ps(in.lowerMass + gridIdx);
+    __m512 upperMass = _mm512_loadu_ps(in.upperMass + gridIdx);
+
+    for (U64 i = 0; i < 20; ++i)
+    {
+      const float* __restrict pData = dataStart;
+      const float* __restrict pYData = yDataStart;
+      const __m512 gridY = _mm512_mul_ps(oneHalf, _mm512_add_ps(gridYMin, gridYMax));
+      __m512 integrals = _mm512_setzero_ps();
+
+      do
+      {
+        __m512 dx = _mm512_sub_ps(gridX, _mm512_set1_ps(*pData));
+        __m512 dy = _mm512_sub_ps(gridY, _mm512_set1_ps(*pYData));
+        integrals = _mm512_fmadd_ps(WendlandEval(dx, xBandwidth, rXBandwidth), WendlandIntegral(dy, yBandwidth, rYBandwidth), integrals);
+        pData = reinterpret_cast<const float*>(reinterpret_cast<uintptr_t>(pData) + 4);
+        pYData = reinterpret_cast<const float*>(reinterpret_cast<uintptr_t>(pYData) + 4);
+      } while (pData < dataEnd);
+
+      __m512 mass = integrals;
+      __mmask16 isOverTarget = _mm512_cmple_ps_mask(targetMass, mass);
+      __mmask16 isUnderTarget = ~isOverTarget;
+
+      lowerMass = _mm512_mask_blend_ps(isOverTarget, lowerMass, mass);
+      gridYMin = _mm512_mask_blend_ps(isOverTarget, gridYMin, gridY);
+      upperMass = _mm512_mask_blend_ps(isUnderTarget, upperMass, mass);
+      gridYMax = _mm512_mask_blend_ps(isUnderTarget, gridYMax, gridY);
+    }
+    _mm512_storeu_ps(out + gridIdx, gridYMin);
+  }
+}
+
+
+
+
+//
+// Compute the integral along the line x = x[i], for each x[i] in xGrid,
+//  for y <= y[i] in yGrid, of the sum of the kernel function of each data point.
+// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
+//
 static void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& in)
+{
+  std::atomic<U64> sharedGridIdx = 0;
+  const U64 maxThreads = std::thread::hardware_concurrency();
+  //const U64 maxThreads = 16;
+  const U64 targetThreads = in.nData >> 10;
+  const U64 nThreads = (targetThreads < maxThreads) ? targetThreads : maxThreads;
+  printf("Using %llu threads\n", nThreads);
+  std::thread* threads = reinterpret_cast<std::thread*>(malloc(sizeof(std::thread) * nThreads - 1));
+  for (U64 tIdx = 0; tIdx < (nThreads - 1); ++tIdx)
+  {
+    new (threads + tIdx) std::thread(IntegrateToMassWorker, out, std::ref(in), std::ref(sharedGridIdx));
+    //std::thread t
+    //threads[tIdx] = std::move(t);
+  }
+  IntegrateToMassWorker(out, in, sharedGridIdx);
+  for (U64 tIdx = 0; tIdx < (nThreads - 1); ++tIdx)
+    threads[tIdx].join();
+}
+
+
+
+
+
+//
+// Compute the integral along the line x = x[i], for each x[i] in xGrid,
+//  for y <= y[i] in yGrid, of the sum of the kernel function of each data point.
+// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
+//
+static void IntegrateToMassSingleThread(float* const __restrict out, const IntegrateToMassInputs& in)
 {
   const float* const __restrict dataStart = in.xData;
   const float* const __restrict dataEnd = dataStart + in.nData;
@@ -188,7 +279,7 @@ static void IntegrateToMass(float* const __restrict out, const IntegrateToMassIn
         __m512 gridX = _mm512_loadu_ps(gridStart + iGrid);
         const __m512 gridYMin = _mm512_loadu_ps(in.lowerY + iGrid);
         const __m512 gridYMax = _mm512_loadu_ps(in.upperY + iGrid);
-        __m512 twoGridY = _mm512_add_ps(gridYMin, gridYMax);
+        __m512 gridY = _mm512_mul_ps(oneHalf, _mm512_add_ps(gridYMin, gridYMax));
         const __m512 prevIntegrals = _mm512_loadu_ps(out + iGrid);
         __m512 integrals = _mm512_setzero_ps();
 
@@ -197,7 +288,7 @@ static void IntegrateToMass(float* const __restrict out, const IntegrateToMassIn
         do
         {
           __m512 dx = _mm512_sub_ps(gridX, _mm512_set1_ps(*pData));
-          __m512 dy = _mm512_fmsub_ps(oneHalf, twoGridY, _mm512_set1_ps(*pYData));
+          __m512 dy = _mm512_sub_ps(gridY, _mm512_set1_ps(*pYData));
           integrals = _mm512_fmadd_ps(WendlandEval(dx, xBandwidth, rXBandwidth), WendlandIntegral(dy, yBandwidth, rYBandwidth), integrals);
           pData = reinterpret_cast<const float*>(reinterpret_cast<uintptr_t>(pData) + 4);
           pYData = reinterpret_cast<const float*>(reinterpret_cast<uintptr_t>(pYData) + 4);
@@ -235,5 +326,3 @@ static void IntegrateToMass(float* const __restrict out, const IntegrateToMassIn
 }
 
 }
-
-#endif // INTEGRATOR_AVX512_H

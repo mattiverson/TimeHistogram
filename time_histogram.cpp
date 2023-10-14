@@ -17,11 +17,11 @@ TimeHistogram::TimeHistogram(const float* x, const float* y, const U64 n)
   upperMass = xGrid + 4*nGrid;
   targetMass = xGrid + 5*nGrid;
   totalMass = xGrid + 6*nGrid;
-  FindDataBounds(xMin, xMax, yMin, yMax, x, y, n);
+  Integrator::FindDataBounds(xMin, xMax, yMin, yMax, x, y, n);
   SetXGridRange(xMin, xMax);
-  LineIntegralsInputs in;
+  Integrator::LineIntegralsInputs in;
   FillLineIntegralsInputs(in);
-  LineIntegrals(totalMass, in);
+  Integrator::LineIntegrals(totalMass, in);
 }
 
 TimeHistogram::~TimeHistogram()
@@ -37,7 +37,7 @@ void TimeHistogram::ComputeQuantiles(
   const float loY = yMin - yBandwidth;
   const float hiY = yMax + yBandwidth;
 
-  IntegrateToMassInputs in;
+  Integrator::IntegrateToMassInputs in;
   FillIntegrateToMassInputs(in);
   for (U64 i = 0; i < nQuantiles; ++i)
   {
@@ -51,7 +51,7 @@ void TimeHistogram::ComputeQuantiles(
       upperY[j] = hiY;
     }
 
-    IntegrateToMass(out + i*nGrid, in);
+    Integrator::IntegrateToMass(out + i*nGrid, in);
   }
 }
 

@@ -49,7 +49,7 @@ public:
 
 private:
 
-  void FillLineIntegralsInputs(LineIntegralsInputs& out)
+  void FillLineIntegralsInputs(Integrator::LineIntegralsInputs& out)
   {
     out.xGrid = xGrid;
     out.nGrid = nGrid;
@@ -58,7 +58,7 @@ private:
     out.xBandwidth = xBandwidth;
   }
 
-  void FillIntegrateToMassInputs(IntegrateToMassInputs& out)
+  void FillIntegrateToMassInputs(Integrator::IntegrateToMassInputs& out)
   {
     out.xGrid = xGrid;
     out.targetMass = targetMass;
