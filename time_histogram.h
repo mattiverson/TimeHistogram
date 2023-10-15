@@ -11,7 +11,7 @@ using U64 = uint64_t;
 class TimeHistogram
 {
 public:
-  TimeHistogram(const float* x, const float* y, const U64 n);
+  TimeHistogram(const float* x, const float* y, const U64 n, const float xBandwidth, const float yBandwidth);
   TimeHistogram() = delete;
   TimeHistogram(const TimeHistogram& other) = delete;
   TimeHistogram(TimeHistogram&& other) = delete;
@@ -21,12 +21,12 @@ public:
     const float* const __restrict quantiles,
     const U64 nQuantiles);
 
-  void SetTimeBandwidth(const float x)
+  void SetXBandwidth(const float x)
   {
     xBandwidth = x;
   }
 
-  void SetSpaceBandwidth(const float y)
+  void SetYBandwidth(const float y)
   {
     yBandwidth = y;
   }
@@ -45,6 +45,11 @@ public:
   U64 GetNGrid()
   {
     return nGrid;
+  }
+
+  const float* GetXGrid()
+  {
+    return xGrid;
   }
 
 private:

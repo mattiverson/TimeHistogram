@@ -45,8 +45,8 @@ static __m512 WendlandIntegral(__m512 x, const __m512 bandwidth, const __m512 rB
   const __m512 sign = _mm512_xor_ps(signBit, one);
   x = _mm512_abs_ps(x);
   x = _mm512_min_ps(x, bandwidth);
-  // rBandwidth * (x-1)
-  const __m512 m = _mm512_fmsub_ps(rBandwidth, x, rBandwidth);
+  // (x/bandwidth) - 1
+  const __m512 m = _mm512_fmsub_ps(rBandwidth, x, one);
   const __m512 m3 = _mm512_mul_ps(m, _mm512_mul_ps(m, m));
   const __m512 m6 = _mm512_mul_ps(m3, m3);
   const __m512 m7 = _mm512_mul_ps(m6, m);
@@ -94,10 +94,10 @@ static void FindDataBounds(float& xMin, float& xMax, float& yMin, float& yMax, c
 
   for (U64 i = blockN; i < n; ++i)
   {
-    _xMin = (xData[i] < xMin) ? xData[i] : xMin;
-    _xMax = (xData[i] > xMax) ? xData[i] : xMax;
-    _yMin = (yData[i] < yMin) ? yData[i] : yMin;
-    _yMax = (yData[i] > yMax) ? yData[i] : yMax;
+    _xMin = (xData[i] < _xMin) ? xData[i] : _xMin;
+    _xMax = (xData[i] > _xMax) ? xData[i] : _xMax;
+    _yMin = (yData[i] < _yMin) ? yData[i] : _yMin;
+    _yMax = (yData[i] > _yMax) ? yData[i] : _yMax;
   }
   xMin = _xMin;
   xMax = _xMax;
@@ -204,10 +204,10 @@ static void IntegrateToMassWorker(float* const __restrict out, const IntegrateTo
       __mmask16 isOverTarget = _mm512_cmple_ps_mask(targetMass, mass);
       __mmask16 isUnderTarget = ~isOverTarget;
 
-      lowerMass = _mm512_mask_blend_ps(isOverTarget, lowerMass, mass);
-      gridYMin = _mm512_mask_blend_ps(isOverTarget, gridYMin, gridY);
-      upperMass = _mm512_mask_blend_ps(isUnderTarget, upperMass, mass);
-      gridYMax = _mm512_mask_blend_ps(isUnderTarget, gridYMax, gridY);
+      lowerMass = _mm512_mask_blend_ps(isOverTarget, mass, lowerMass);
+      gridYMin = _mm512_mask_blend_ps(isOverTarget, gridY, gridYMin);
+      upperMass = _mm512_mask_blend_ps(isUnderTarget, mass, upperMass);
+      gridYMax = _mm512_mask_blend_ps(isUnderTarget, gridY, gridYMax);
     }
     _mm512_storeu_ps(out + gridIdx, gridYMin);
   }
@@ -224,10 +224,12 @@ static void IntegrateToMassWorker(float* const __restrict out, const IntegrateTo
 static void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& in)
 {
   std::atomic<U64> sharedGridIdx = 0;
+  constexpr U64 minThreads = 1;
   const U64 maxThreads = std::thread::hardware_concurrency();
   //const U64 maxThreads = 16;
   const U64 targetThreads = in.nData >> 10;
-  const U64 nThreads = (targetThreads < maxThreads) ? targetThreads : maxThreads;
+  U64 nThreads = (targetThreads < maxThreads) ? targetThreads : maxThreads;
+  nThreads = (nThreads > minThreads) ? nThreads : minThreads;
   printf("Using %llu threads\n", nThreads);
   std::thread* threads = reinterpret_cast<std::thread*>(malloc(sizeof(std::thread) * nThreads - 1));
   for (U64 tIdx = 0; tIdx < (nThreads - 1); ++tIdx)

@@ -2,15 +2,15 @@
 
 namespace TimeHistogram {
 
-TimeHistogram::TimeHistogram(const float* x, const float* y, const U64 n)
+TimeHistogram::TimeHistogram(const float* x, const float* y, const U64 n, const float xBandwidth_, const float yBandwidth_)
   : nData{n}
   , xData{x}
   , yData{y}
   , nGrid{1024}
-  , xBandwidth{1.0f}
-  , yBandwidth{1.0f}
+  , xBandwidth{xBandwidth_}
+  , yBandwidth{yBandwidth_}
 {
-  xGrid = reinterpret_cast<float*>(_mm_malloc(sizeof(float) * nGrid * 7, 64));
+  xGrid = reinterpret_cast<float*>(_mm_malloc(sizeof(float) * nGrid * 7, 4096));
   lowerY = xGrid + nGrid;
   lowerMass = xGrid + 2*nGrid;
   upperY = xGrid + 3*nGrid;
