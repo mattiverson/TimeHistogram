@@ -1,42 +1,35 @@
 #pragma once
 
-#include "integrator_common.h"
-
 #define ALLOW_INTEGRATOR_IMPL
-#if defined __AVX512F__ && defined __AVX512DQ__ && !defined FORCE_GENERIC && !defined FORCE_AVX2 || defined FORCE_AVX512
 
-#include "integrator_avx512.h"
+#undef TIMEHISTOGRAM_USE_AVX512
+#undef TIMEHISTOGRAM_USE_AVX2
+#undef TIMEHISTOGRAM_USE_GENERIC
 
-#elif defined(__AVX2__) && !defined FORCE_GENERIC || defined FORCE_AVX2
-#include <immintrin.h>
-
-// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
-void LineIntegrals(float* const __restrict out, const LineIntegralsInputs& in)
-{
-
-}
-
-
-// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
-void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& in)
-{
-
-}
-
-#else // Generic Arch
-
-// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
-void LineIntegrals(float* const __restrict out, const LineIntegralsInputs& in)
-{
-
-}
-
-
-// PRECONDITION: nGrid is divisible by 16, nGrid > 0, nData > 0.
-void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& in)
-{
-
-}
-
+#if defined TIMEHISTOGRAM_FORCE_AVX512
+#    define TIMEHISTOGRAM_USE_AVX512
+#elif defined TIMEHISTOGRAM_FORCE_AVX2
+#    define TIMEHISTOGRAM_USE_AVX2
+#elif defined TIMEHISTOGRAM_FORCE_GENERIC
+#    define TIMEHISTOGRAM_USE_GENERIC
+#elif defined __AVX512F__ && defined __AVX512DQ__
+#    define TIMEHISTOGRAM_USE_AVX512
+#elif defined __AVX2__
+#    define TIMEHISTOGRAM_USE_AVX2
+#else
+#    define TIMEHISTOGRAM_USE_GENERIC
 #endif
+
+#if defined TIMEHISTOGRAM_USE_AVX512
+#    include "integrator_avx512.h"
+#elif defined TIMEHISTOGRAM_USE_AVX2
+#    include "integrator_avx2.h"
+#else
+#    include "integrator_generic.h"
+#endif
+
+#undef USE_AVX512
+#undef USE_AVX2
+#undef USE_GENERIC
+
 #undef ALLOW_INTEGRATOR_IMPL
