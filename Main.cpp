@@ -1,70 +1,15 @@
 #include "time_histogram.h"
 
-#include <chrono>
 #include <fstream>
-#include <immintrin.h>
 
 using U64 = uint64_t;
 
-void TestCorrectness()
-{
-    constexpr U64 nData = 16;
-    float xData[nData];
-    float yData[nData];
-    for (U64 i = 0; i < nData; ++i)
-    {
-        xData[i] = static_cast<float>(i) / 16.0f;
-        yData[i] = 4.0f * xData[i] * (1.0f - xData[i]);
-    }
-    TimeHistogram::TimeHistogram hist(xData, yData, nData, 1.0f, 1.0f);
-    float quantileData[3 * 1024];
-    constexpr float quantiles[] = {0.0f, 0.5f, 1.0f};
-    hist.ComputeQuantiles(quantileData, quantiles, 3);
-    //printf("%.6f, %.6f, %.6f, %.6f\n", Integrator::WendlandIntegralEvalScalar(-1.0f), Integrator::WendlandIntegralEvalScalar(-0.0f), WendlandIntegralEvalScalar(0.0f), WendlandIntegralEvalScalar(1.0f));
-}
-
-void Profile()
-{
-    std::chrono::high_resolution_clock clock;
-    auto startData = clock.now();
-
-    constexpr U64 nData = 1048576;
-    float* xData;
-    float* yData;
-    xData = reinterpret_cast<float*>(_mm_malloc(2 * nData * sizeof(float), 4096));
-    yData = xData + nData;
-
-    for (U64 i = 0; i < nData; ++i)
-    {
-        xData[i] = -123.45f + 0.00076567f * static_cast<float>(i);
-        yData[i] = sinf(xData[i]);
-    }
-
-    auto stopData = clock.now();
-    auto dataDuration = stopData - startData;
-    U64 dataNanos = dataDuration.count();
-    printf("Data generated in %llu nanos\n", dataNanos);
-
-    TimeHistogram::TimeHistogram hist(xData, yData, nData, 1.0f, 1.0f);
-    float quantileData[5 * 1024];
-    constexpr float quantiles[] = {0.1f, 0.25f, 0.5f, 0.75f, 0.9f};
-    auto computeStart = clock.now();
-    hist.ComputeQuantiles(quantileData, quantiles, 5);
-    auto computeStop = clock.now();
-    auto computeDuration = computeStop - computeStart;
-    U64 computeNanos = computeDuration.count();
-    U64 integralCount = 100ULL * 1024ULL * nData;
-    printf("%llu integrals in %llu nanos\n", integralCount, computeNanos);
-    double integralRate = static_cast<double>(integralCount) / static_cast<double>(computeNanos);
-    printf("Rate: %f G /s\n", integralRate);
-}
-
-void RunFromFile(int argc, char** argv)
+int main(int argc, char** argv)
 {
     if (argc < 2)
     {
         printf("Missing input file name!");
-        return;
+        return 1;
     }
     float xBandwidth = 1.0f;
     float yBandwidth = 1.0f;
@@ -83,7 +28,7 @@ void RunFromFile(int argc, char** argv)
     if (!inputFile)
     {
         printf("Couldn't open file %s", fileName);
-        return;
+        return 1;
     }
     // discard 1st line
     inputFile.getline(readBuffer, 256);
@@ -120,7 +65,7 @@ void RunFromFile(int argc, char** argv)
     constexpr U64 nGrid = 1024;
     const float* xGrid = hist.GetXGrid();
     float quantileData[5 * nGrid];
-    constexpr float quantiles[] = {0.1f, 0.25f, 0.5f, 0.75f, 0.9f};
+    constexpr float quantiles[] = { 0.1f, 0.25f, 0.5f, 0.75f, 0.9f };
     hist.ComputeQuantiles(quantileData, quantiles, 5);
 
     std::ofstream output;
@@ -132,11 +77,5 @@ void RunFromFile(int argc, char** argv)
             + i] << "," << quantileData[3 * nGrid + i] << "," << quantileData[4 * nGrid + i] << "\n";
     }
     output.close();
-}
-
-int main(int argc, char** argv)
-{
-    Profile();
-    //RunFromFile(argc, argv);
     return 0;
 }
