@@ -197,12 +197,10 @@ namespace Integrator {
     {
         std::atomic<U64> sharedGridIdx = 0;
         constexpr U64 minThreads = 1;
-        //const U64 maxThreads = std::thread::hardware_concurrency();
-        const U64 maxThreads = 1;
+        const U64 maxThreads = std::thread::hardware_concurrency();
         const U64 targetThreads = in.nData >> 10;
         U64 nThreads = (targetThreads < maxThreads) ? targetThreads : maxThreads;
         nThreads = (nThreads > minThreads) ? nThreads : minThreads;
-        printf("Using %llu threads\n", nThreads);
         std::thread* threads = static_cast<std::thread*>(malloc(sizeof(std::thread) * nThreads - 1));
         for (U64 tIdx = 0; tIdx < (nThreads - 1); ++tIdx)
         {
