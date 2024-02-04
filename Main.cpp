@@ -4,8 +4,13 @@
 
 using U64 = uint64_t;
 
+void Profile();
+
 int main(int argc, char** argv)
 {
+    Profile();
+    return 0;
+
     if (argc < 2)
     {
         printf("Missing input file name!");
@@ -47,8 +52,10 @@ int main(int argc, char** argv)
         if (nData == maxSize)
         {
             const U64 newMaxSize = maxSize << 1;
-            const auto newXData = reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
-            const auto newYData = reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
+            const auto newXData =
+                reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
+            const auto newYData =
+                reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
             memcpy(newXData, xData, maxSize * sizeof(float));
             memcpy(newYData, yData, maxSize * sizeof(float));
             _mm_free(xData);
@@ -73,8 +80,9 @@ int main(int argc, char** argv)
     output << "xGrid,p10,p25,p50,p75,p90\n";
     for (U64 i = 0; i < nGrid; ++i)
     {
-        output << xGrid[i] << "," << quantileData[i] << "," << quantileData[nGrid + i] << "," << quantileData[2 * nGrid
-            + i] << "," << quantileData[3 * nGrid + i] << "," << quantileData[4 * nGrid + i] << "\n";
+        output << xGrid[i] << "," << quantileData[i] << "," << quantileData[nGrid + i] << ","
+               << quantileData[2 * nGrid + i] << "," << quantileData[3 * nGrid + i] << ","
+               << quantileData[4 * nGrid + i] << "\n";
     }
     output.close();
     return 0;

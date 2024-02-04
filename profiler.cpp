@@ -37,5 +37,5 @@ void Profile()
     U64 integralCount = 100ULL * 1024ULL * nData;
     printf("%llu integrals in %llu nanos\n", integralCount, computeNanos);
     double integralRate = static_cast<double>(integralCount) / static_cast<double>(computeNanos);
-    printf("Rate: %f G /s\n", integralRate);
+    printf("Rate: %f G/s\n", integralRate);
 }
