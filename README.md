@@ -52,7 +52,7 @@ So let's see how well our estimates, computed from the randomly-generated data, 
 
 <img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/ExactQuantiles.png" width="80%"></img>
 
-We can see that the computed estimates are very well aligned with the theoretical percentiles. Even over the discontinuities at x=20 and x=80, the computed estimates quickly transition between the two.
+We can see that the computed estimates are very well aligned with the theoretical percentiles. Even over the discontinuities at x=20 and x=80, the computed estimates quickly transition between the two theoretical values on either side.
 
 We can also see that our quantitative claims were fairly accurate: the exact interquartile range for x < 20 is 0.5, and 0.27 for 20 < x < 40.
 
