@@ -56,6 +56,8 @@ We can see that the computed estimates are very well aligned with the theoretica
 
 We can also see that our quantitative claims were fairly accurate: the exact interquartile range for x < 20 is 0.5, and 0.27 for 20 < x < 40.
 
+## Controlling Smoothness
+
 TimeHistogram also allows us to choose different bandwidths for the smoothing kernel, in the X and Y dimensions. This lets us control how smooth the estimated percentiles are. In other words, this controlls the bias-variance tradeoff. For example, here are the results with a tighter X bandwidth, producing less smoothed results (less bias, more variance):
 
 <img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/LowerBias.png" width="80%"></img>
