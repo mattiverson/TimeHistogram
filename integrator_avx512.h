@@ -174,16 +174,16 @@ static void IntegrateToMassWorker(float* const __restrict out,
 {
     U64 gridIdx;
     constexpr U32 kWidth = 1;
+    const float* const __restrict dataStart = in.xData;
+    const float* const __restrict yDataStart = in.yData;
+    const float* const __restrict dataEnd = dataStart + in.nData;
+    const __m512 xBandwidth = _mm512_set1_ps(in.xBandwidth);
+    const __m512 rXBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), xBandwidth);
+    const __m512 yBandwidth = _mm512_set1_ps(in.yBandwidth);
+    const __m512 rYBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), yBandwidth);
+    const __m512 oneHalf = _mm512_set1_ps(0.5f);
     while ((gridIdx = sharedGridIdx.fetch_add(16 * kWidth, std::memory_order_relaxed)) < in.nGrid)
     {
-        const float* const __restrict dataStart = in.xData;
-        const float* const __restrict yDataStart = in.yData;
-        const float* const __restrict dataEnd = dataStart + in.nData;
-        const __m512 xBandwidth = _mm512_set1_ps(in.xBandwidth);
-        const __m512 rXBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), xBandwidth);
-        const __m512 yBandwidth = _mm512_set1_ps(in.yBandwidth);
-        const __m512 rYBandwidth = _mm512_div_ps(_mm512_set1_ps(1.0f), yBandwidth);
-        const __m512 oneHalf = _mm512_set1_ps(0.5f);
         __m512 targetMass[kWidth];
         __m512 gridX[kWidth];
         __m512 gridYMin[kWidth];
@@ -256,14 +256,16 @@ static void IntegrateToMass(float* const __restrict out, const IntegrateToMassIn
 {
     std::atomic<U64> sharedGridIdx = 0;
     constexpr U64 minThreads = 1;
-    const U64 maxThreads = std::thread::hardware_concurrency();
+    constexpr U64 maxThreads = 32;
     const U64 targetThreads = (in.nData + 1023) >> 10;
-    U64 nThreads = (targetThreads < maxThreads) ? targetThreads : maxThreads;
+    U64 nThreads = std::thread::hardware_concurrency();
+    nThreads = (nThreads < targetThreads) ? nThreads : targetThreads;
+    nThreads = (nThreads < maxThreads) ? nThreads : maxThreads;
     nThreads = (nThreads > minThreads) ? nThreads : minThreads;
-    auto threads = static_cast<std::thread*>(malloc(sizeof(std::thread) * nThreads - 1));
+    std::thread threads[maxThreads - 1];
     for (U64 tIdx = 0; tIdx < (nThreads - 1); ++tIdx)
     {
-        new (threads + tIdx)
+        threads[tIdx] =
             std::thread(IntegrateToMassWorker, out, std::ref(in), std::ref(sharedGridIdx));
     }
     IntegrateToMassWorker(out, in, sharedGridIdx);

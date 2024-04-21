@@ -2,6 +2,9 @@
 
 namespace TimeHistogram
 {
+
+static inline float Max(float a, float b) { return a > b ? a : b; }
+
 TimeHistogram::TimeHistogram(
     const float* x, const float* y, const U64 n, const float xBandwidth_, const float yBandwidth_)
     : m_nData{ n },
@@ -20,9 +23,13 @@ TimeHistogram::TimeHistogram(
     m_totalMass = m_xGrid + 6 * m_nGrid;
     Integrator::FindDataBounds(m_xMin, m_xMax, m_yMin, m_yMax, x, y, n);
     SetXGridRange(m_xMin, m_xMax);
+    if (m_xBandwidth == 0.0f)
+        m_xBandwidth = Max(0x1p-126f, 0.01f * (m_xMax - m_xMin));
+    if (m_yBandwidth == 0.0f)
+        m_yBandwidth = Max(0x1p-126f, 0.01f * (m_yMax - m_yMin));
     Integrator::LineIntegralsInputs in;
     FillLineIntegralsInputs(in);
-    LineIntegrals(m_totalMass, in);
+    Integrator::LineIntegrals(m_totalMass, in);
 }
 
 TimeHistogram::~TimeHistogram() { _mm_free(m_xGrid); }
@@ -48,7 +55,7 @@ void TimeHistogram::ComputeQuantiles(float* const __restrict out,
             m_upperY[j] = hiY;
         }
 
-        IntegrateToMass(out + i * m_nGrid, in);
+        Integrator::IntegrateToMass(out + i * m_nGrid, in);
     }
 }
 } // namespace TimeHistogram

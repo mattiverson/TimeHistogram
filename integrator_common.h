@@ -24,7 +24,7 @@ static constexpr float R_WEND_INT = 27.0f / 16.0f;
 static constexpr float SIGN_MASK = -0.0f;
 
 // Reference only. The C4 Wendland kernel, 1/3 * (35x^2 + 18x + 3) * (x-1)^6.
-static float WendlandEvalScalar(float x)
+[[maybe_unused]] static float WendlandEvalScalar(float x)
 {
     const float m = abs(x) - 1.0f;
     const float m3 = m * m * m;
@@ -33,7 +33,7 @@ static float WendlandEvalScalar(float x)
 
 // Reference only. Integral of the C4 Wendland kernel from -1 to x.
 // 35/27 (x-1)^9 + 11/3 (x-1)^8 + 8/3 (x-1)^7 + 8/27.
-static float WendlandIntegralEvalScalar(float x)
+[[maybe_unused]] static float WendlandIntegralEvalScalar(float x)
 {
     const float sign = (x < 0.0f) ? -1.0f : 1.0f;
     x = abs(x);

@@ -218,7 +218,7 @@ static void IntegrateToMassWorker(float* const __restrict out,
 //
 static void IntegrateToMass(float* const __restrict out, const IntegrateToMassInputs& in)
 {
-    std::atomic<U64> sharedGridIdx = 0;
+    std::atomic<U64> sharedGridIdx{ 0 };
     constexpr U64 minThreads = 1;
     const U64 maxThreads = std::thread::hardware_concurrency();
     const U64 targetThreads = (in.nData + 1023) >> 10;
