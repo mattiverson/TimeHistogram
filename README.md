@@ -4,14 +4,14 @@ High-performance estimation of percentiles of large time series data, varying ov
 
 Suppose you are looking for trends in a very large time series of data. With many data points, it is difficult to understand the behavior at a glance. For example, here is a dataset of 50,000 (x, y) points, plotted as a line graph.
 
-<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/InitialData.png" width="80%"></img>
+<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/InitialData.png" width="100%"></img>
 
 There are some clear changes in behavior at x=20 and x=80, but it's hard to see anything other than the min and max values.
 For example, it's not obvious whether the variance of the data increased or decreased after x=20; the minima and maxima extend further than they do for x < 20, but there are fewer data points reaching those extreme values.
 
 This is the motivation for TimeHistogram: we can use it to calculate and plot percentiles of this time series. Here are its estimates of the 10th, 25th, 50th, 75th, and 90th percentile:
 
-<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/ComputedQuantiles.png" width="80%"></img>
+<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/ComputedQuantiles.png" width="100%"></img>
 
 Now we can see a much more clear picture of the data's behavior over time. It is now obvious that variance decreased at x=20. The oscillations from x=40 to x=60, which were easy to miss before, are now obvious.
 We can even go a step further, and make specific quantitative claims -- the interquartile range was steady around 0.52 for x < 20, before reducing to around 0.27 for 20 < x < 40.
@@ -50,7 +50,7 @@ ty5 = 1.5 + (0.5 + 0.01*(x5-80))*(2*q-1)
 
 So let's see how well our estimates, computed from the randomly-generated data, were able to match these theoretical values:
 
-<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/ExactQuantiles.png" width="80%"></img>
+<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/ExactQuantiles.png" width="100%"></img>
 
 We can see that the computed estimates are very well aligned with the theoretical percentiles. Even over the discontinuities at x=20 and x=80, the computed estimates quickly transition between the two theoretical values on either side.
 
@@ -60,11 +60,11 @@ We can also see that our quantitative claims were fairly accurate: the exact int
 
 TimeHistogram also allows us to choose different bandwidths for the smoothing kernel, in the X and Y dimensions. This lets us control how smooth the estimated percentiles are. In other words, this controlls the bias-variance tradeoff. For example, here are the results with a tighter X bandwidth, producing less smoothed results (less bias, more variance):
 
-<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/LowerBias.png" width="80%"></img>
+<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/LowerBias.png" width="100%"></img>
 
 And here are the results with a wider X bandwidth, producing more smooth results (more bias, less variance).
 
-<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/LowerVariance.png" width="80%"></img>
+<img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/LowerVariance.png" width="100%"></img>
 
 The less smooth results adjust faster to the step changes, but don't track as closely to the exact values. The more smooth results track the exact values very well in the domains where the exact values are constant, or vary slowly, but they don't adjust as quickly to step changes, and they partly smooth over the true oscillation for 40 < x < 60.
 
