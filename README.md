@@ -2,7 +2,7 @@
 
 High-performance estimation of percentiles of large time series data, varying over time. Freely available under the MIT license.
 
-Suppose you are looking for trends in a very large time series of data. With many data points, it is difficult to understand the behavior at a glance. For example, here is a dataset of 50,000 (x, y) points.
+Suppose you are looking for trends in a very large time series of data. With many data points, it is difficult to understand the behavior at a glance. For example, here is a dataset of 50,000 (x, y) points, plotted as a line graph.
 
 <img src="https://raw.githubusercontent.com/mattiverson/TimeHistogram/master/figures/InitialData.png" width="80%"></img>
 
