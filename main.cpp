@@ -8,16 +8,16 @@ void Profile();
 
 int main(int argc, char** argv)
 {
-    Profile();
-    return 0;
+    //Profile();
+    //return 0;
 
     if (argc < 2)
     {
         printf("Missing input file name!");
         return 1;
     }
-    float xBandwidth = 1.0f;
-    float yBandwidth = 1.0f;
+    float xBandwidth = 0.0f;
+    float yBandwidth = 0.0f;
     char* fileName = argv[1];
     if (argc >= 3)
     {
@@ -39,8 +39,8 @@ int main(int argc, char** argv)
     inputFile.getline(readBuffer, 256);
     U64 nData = 0;
     U64 maxSize = 1024;
-    auto xData = reinterpret_cast<float*>(_mm_malloc(maxSize * sizeof(float), 4096));
-    auto yData = reinterpret_cast<float*>(_mm_malloc(maxSize * sizeof(float), 4096));
+    float* xData = reinterpret_cast<float*>(_mm_malloc(2 * maxSize * sizeof(float), 4096));
+    float* yData = xData + maxSize;
     while (inputFile.getline(readBuffer, 256, ','))
     {
         const float x = static_cast<float>(std::atof(readBuffer));
@@ -52,14 +52,12 @@ int main(int argc, char** argv)
         if (nData == maxSize)
         {
             const U64 newMaxSize = maxSize << 1;
-            const auto newXData =
-                reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
-            const auto newYData =
-                reinterpret_cast<float*>(_mm_malloc(newMaxSize * sizeof(float), 4096));
+            float* newXData =
+                reinterpret_cast<float*>(_mm_malloc(2 * newMaxSize * sizeof(float), 4096));
+            float* newYData = newXData + newMaxSize;
             memcpy(newXData, xData, maxSize * sizeof(float));
             memcpy(newYData, yData, maxSize * sizeof(float));
             _mm_free(xData);
-            _mm_free(yData);
             xData = newXData;
             yData = newYData;
             maxSize = newMaxSize;
@@ -67,8 +65,6 @@ int main(int argc, char** argv)
     }
 
     TimeHistogram::TimeHistogram hist(xData, yData, nData, xBandwidth, yBandwidth);
-    hist.SetXBandwidth(xBandwidth);
-    hist.SetYBandwidth(yBandwidth);
     constexpr U64 nGrid = 1024;
     const float* xGrid = hist.GetXGrid();
     float quantileData[5 * nGrid];
